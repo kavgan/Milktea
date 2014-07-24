@@ -7,5 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "James Lee <jlee@penguin.ws> (http://jlee.biz/)",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "q": "^1.0.1",
+    "commander": "^2.3.0"
+  }
 }
