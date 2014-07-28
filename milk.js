@@ -9,6 +9,8 @@ var init = require('./init.js');
 //init();
 program.version('0.0.1');
 
+
+
 program.command('init')
     .description('initialize milktea')
     .option('-r, --restart','restart milktea')
@@ -53,6 +55,8 @@ program.command('ssh <domain>')
         console.log(domain);
     });
 
-
-
 program.parse(process.argv);
+
+if(process.argv.length == 2){
+    program.help();
+}
