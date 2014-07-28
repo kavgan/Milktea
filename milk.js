@@ -6,7 +6,7 @@
 
 var program = require('commander');
 var init = require('./init.js');
-//init();
+init();
 program.version('0.0.1');
 
 
@@ -58,5 +58,5 @@ program.command('ssh <domain>')
 program.parse(process.argv);
 
 if(process.argv.length == 2){
-    program.help();
+    //program.help();
 }
