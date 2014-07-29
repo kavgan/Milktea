@@ -5,8 +5,8 @@
  */
 
 var program = require('commander');
-var init = require('./init.js');
-init();
+var milktea = require('./milktea.js');
+//init();
 program.version('0.0.1');
 
 
@@ -16,13 +16,13 @@ program.command('init')
     .option('-r, --restart','restart milktea')
     .option('-res, --res [value]','testing')
     .action( function(options){
-        init();
+        milktea.init();
     });
 
 program.command('start <domain>')
     .description('start a domain')
     .action( function(domain){
-        console.log('starting ... ',domain);
+        milktea.start(domain);
     });
 
 program.command('stop <domain>')
@@ -58,5 +58,5 @@ program.command('ssh <domain>')
 program.parse(process.argv);
 
 if(process.argv.length == 2){
-    //program.help();
+    program.help();
 }
