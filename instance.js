@@ -136,7 +136,10 @@ var Instance = function instance(domain){
                                 break;
                             case 1:
                                 console.log('Image exists, starting image');
-                                return self.start_image().then(resolve);
+                                return self.generate_vhost()
+                                    .then(self.generate_sample_index)
+                                    .then(self.start_image)
+                                    .then(resolve);
                                 break;
                             case 2:
                                 console.log('Process exists, starting process');
