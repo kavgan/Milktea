@@ -7,25 +7,39 @@ var exec = require('child_process').exec,
 var nginx_img_name = 'milktea/nginx'
 var nginx_img_name = 'uptownhr/nginx'
 
-var nginx_name = 'milktea_nginx';
-var nginx_name = 'uptownhr_nginx';
+var nginx_name = 'proxy';
+
+var proxy_path = '/tmp/milktea/proxy';
 
 var nginx_proxy = function nginx_proxy(){
     var self = this;
-    this.add_domain = function(domain){
+    this.add_domain = function(domain,port){
         console.log('adding domain');
 
-        read_template().then( function(handlebar){
-            var template = handlebars.compile(handlebar);
-            var string = template( {test:'tumadre'} )
-            console.log(string);
+        return Q.promise(function(resolve,reject,notify){
+            read_template().then( function(handlebar){
+                console.log('then test');
+                var template = handlebars.compile(handlebar);
+                var string = template( {domain:domain,port:port} )
+                console.log(string);
 
-        }).fail( console.log );
+                //write string to proxy/default
+                fs.writeFile(proxy_path + '/default', string, function(err){
+                    if(err){
+                        return reject(err);
+                    }
+                    console.log('proxy vhost generated');
+                    resolve('zzzzz');
+                });
+
+
+            }).fail( reject );
+        });
     }
 
     this.start_image = function(){
         console.log('starting nginx proxy image');
-        return docker.run('-p 80:80 -p 443:443 --name=' + nginx_name + ' -i -t ' + nginx_img_name + ' /bin/bash');
+        return docker.run('-p 80:80 -p 443:443 -v ' + proxy_path + ':/etc/nginx/sites-enabled --name=' + nginx_name + ' -i -t ' + nginx_img_name + ' /bin/bash');
         //return docker.start_image(nginx_name);
     }
 
@@ -49,19 +63,6 @@ var nginx_proxy = function nginx_proxy(){
     this.get_image = function(){
         console.log('pulling nginx_proxy image');
         return docker.pull_image(nginx_img_name);
-    }
-
-    //creates mountable directory
-    this.create_mount_dir = function(){
-        console.log('creating mountable proxy directory');
-
-        return Q.promise( function(resolve, reject, notify){
-            return check_directory()
-                .then( resolve ).fail( create_directory)
-                .then( resolve ).fail( function(msg){
-                    console.log(msg);
-                })
-        });
     }
 
     /*
@@ -90,9 +91,9 @@ var nginx_proxy = function nginx_proxy(){
              3 - process started
              */
             switch(status){
-                case 0: self.create_mount_dir()
-                    .then( self.get_image ).fail(console.log)
-                    .then( self.start_image )
+                case 0:
+                    self.get_image().fail(console.log)
+                    .then( self.start_image).then(console.log);
                     break;
                 case 1: self.start_image(); break;
                 case 2: self.start_process(); break;
@@ -111,9 +112,48 @@ module.exports = proxy;
 function read_template(){
     console.log('reading template');
     return Q.promise( function(resolve,reject,notify){
-        fs.readFile('nginx_proxy/template.js', function(err, data){
+        fs.readFile('templates/proxy.conf', function(err, data){
             if(err){ return reject(err); }
             return resolve(data.toString());
         });
+    })
+}
+
+
+function check_directory(dir_path){
+    console.log('checking for directory');
+
+    return Q.promise( function(resolve,reject,notify){
+        var cmd = 'touch ' + dir_path + '/test';
+        exec(cmd, function(err,stout,sterr){
+            if(err){
+                console.log('err',err);
+                return reject(dir_path);
+            }else{
+                console.log('directory found: ' + dir_path);
+                return resolve();
+            }
+        })
+    });
+}
+
+function create_directory(dir_path){
+    console.log('creating directory');
+
+    return Q.Promise(function(resolve,reject,notify){
+        check_directory(dir_path).then( function(){
+            resolve();
+        }).fail(function(){
+            var cmd = 'mkdir ' + dir_path;
+            exec(cmd, function(err,stout,sterr){
+                if(err){
+                    console.log('error creating directory',err);
+                    reject();
+                }else{
+                    console.log('directory created');
+                    resolve();
+                }
+            })
+        })
     })
 }

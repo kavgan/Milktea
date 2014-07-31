@@ -4,11 +4,12 @@ var exec = require('child_process').exec,
     Q = require('q');
 
 var milktea_dir = '/tmp/milktea';
-
+var proxy_path = milktea_dir + '/proxy';
 
 module.exports = {
     init: function(){
         create_directory(milktea_dir)
+            .then( create_directory(proxy_path) )
             .then( nginx_proxy.init ).fail(console.log);
 
         //pull nginx docker image
@@ -19,31 +20,25 @@ module.exports = {
     },
     start: function(domain){
         var container = new instance(domain);
+        container.init()
+            .then( container.get_port)
+            .then( function(port){
+                nginx_proxy.add_domain(domain,port)
+                    .then(nginx_proxy.init);
+            }).fail( console.log );
 
-        /*
-         0 - image does not exist
-         1 - image exist
-         2 - process name exist
-         3 - process started
-         */
-        container.getStatus().then( function(status){
-
-            switch(status){
-                case 0:
-                    container.get_image();
-                    break;
-                case 1:
-                    container.start_image();
-                    break;
-                case 2:
-                    container.start_process();
-                    break;
-                case 3:
-                    console.log('process already started: ' + domain);
-                default:
-                    console.log('')
+    },
+    stop: function(domain){
+        var container = new instance(domain);
+        container.get_status().then( function(status){
+            if(status != 3){
+                return console.log('process not started: ' + domain);
             }
-        })
+            container.stop_process().then(console.log);
+        });
+    },
+    ssh: function(){
+
     }
 }
 
@@ -58,7 +53,6 @@ function check_directory(dir_path){
                 console.log('err',err);
                 return reject(dir_path);
             }else{
-                console.log('pass');
                 return resolve();
             }
         })

@@ -28,7 +28,7 @@ program.command('start <domain>')
 program.command('stop <domain>')
     .description('stop a domain')
     .action( function(domain){
-        console.log('stoping ... ',domain);
+        milktea.stop(domain);
     });
 
 program.command('list')

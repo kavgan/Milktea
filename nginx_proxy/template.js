@@ -1,4 +1,0 @@
-testing
-asdf
-{{test}}
-asdf

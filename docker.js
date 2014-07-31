@@ -8,7 +8,7 @@ var docker = function(){
             console.log(cmd);
             exec(cmd, function(err, stout,sterr){
                 if(!err){
-                    resolve('nginx started');
+                    resolve('cmd successful: ' + cmd);
                 }else{
                     console.log(stout);
                 }
@@ -48,9 +48,11 @@ var docker = function(){
 
             exec(cmd, function(err, stout,sterr){
                 console.log(err);
-                if(!err){
-                    resolve('nginx started');
+                if(err){
+                    return reject();
                 }
+                console.log('started: ' + name);
+                resolve();
             });
         })
     }
@@ -66,7 +68,7 @@ var docker = function(){
             exec(cmd, function(err, stout,sterr){
                 if(!err){
                     console.log(stout,sterr);
-                    resolve('nginx stopped');
+                    resolve('stopped: ' + name);
                 }
             });
         })
@@ -75,12 +77,27 @@ var docker = function(){
     this.pull_image = function(img_name){
         console.log('pulling image: ' + img_name + ':latest');
         return Q.promise( function(resolve, reject, notify){
-            exec('docker pull ' + img_name + ':latest', function(err, stout, sterr){
+            var cmd = 'docker pull ' + img_name + ':latest';
+            console.log(cmd);
+            exec(cmd, function(err, stout, sterr){
                 if(err){
                     reject(err);
                 }else{
                     resolve(img_name);
                 }
+            });
+        });
+    }
+
+    this.port = function(name){
+        return Q.promise( function(resolve,reject,notify){
+            var cmd = 'docker port ' + name + ' 80';
+
+            exec(cmd, function(err, stout, sterr){
+                if(err){
+                    return reject(err);
+                }
+                resolve(stout.split(':')[1].trim());
             });
         });
     }
@@ -121,7 +138,6 @@ var docker = function(){
         console.log('checking process name:', img_name);
         return Q.promise( function(resolve,reject,notify){
             exec('docker ps -a', function(err, stout,sterr){
-
                 if(err){
                     throw err
                 }else{
@@ -139,9 +155,8 @@ var docker = function(){
                                     columns.push(v.trim());
                                 }
                             })
-
                             //check if img name has already been created
-                            if(columns[6] == img_name || columns[5] == img_name){
+                            if(columns[columns.length-1] == img_name || columns[columns.length-2] == img_name){
                                 found = true;
                                 //check if already started
                                 if( columns[4].search('Exit') == -1 ){
