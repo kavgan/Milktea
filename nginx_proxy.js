@@ -24,7 +24,7 @@ var nginx_proxy = function nginx_proxy(){
                 console.log(string);
 
                 //write string to proxy/default
-                fs.writeFile(proxy_path + '/default', string, function(err){
+                fs.writeFile(proxy_path + '/' + domain, string, function(err){
                     if(err){
                         return reject(err);
                     }

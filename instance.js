@@ -82,9 +82,27 @@ var Instance = function instance(domain){
         });
     }
 
+    this.generate_sample_index = function(){
+        return Q.promise( function(resolve, reject, notify){
+            read_template('sample.html').then( function(html){
+                var template = handlebars.compile(html);
+                var string = template( {domain:self.domain} )
+                //write string to vhost/default
+                console.log(string);
+                fs.writeFile(self.project_doc_root + '/index.html', string, function(err){
+                    if(err){
+                        return reject(err);
+                    }
+                    console.log('sample generated');
+                    resolve();
+                });
+            })
+        })
+    }
+
     this.generate_vhost = function(){
         return Q.promise( function(resolve, reject, notify){
-            read_template().then( function(conf){
+            read_template('instance.conf').then( function(conf){
                 var template = handlebars.compile(conf);
                 var string = template( {domain:self.domain} )
                 //write string to vhost/default
@@ -104,19 +122,24 @@ var Instance = function instance(domain){
 
         return Q.promise( function(resolve,reject,notify){
             self.create_directories()
-                .then(self.generate_vhost)
+
                 .then(self.get_status)
                 .then( function(status){
                         switch(status){
                             case 0:
+                                console.log('New Init');
                                 return self.get_image()
+                                    .then(self.generate_vhost)
+                                    .then(self.generate_sample_index)
                                     .then( self.start_image)
                                     .then( resolve );
                                 break;
                             case 1:
+                                console.log('Image exists, starting image');
                                 return self.start_image().then(resolve);
                                 break;
                             case 2:
+                                console.log('Process exists, starting process');
                                 return self.start_process().then(resolve);
                                 break;
                             case 3:
@@ -178,10 +201,10 @@ function create_directory(dir_path){
     })
 }
 
-function read_template(){
+function read_template(file){
     console.log('reading template');
     return Q.promise( function(resolve,reject,notify){
-        fs.readFile('templates/instance.conf', function(err, data){
+        fs.readFile('templates/' + file, function(err, data){
             if(err){ return reject(err); }
             return resolve(data.toString());
         });

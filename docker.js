@@ -47,7 +47,6 @@ var docker = function(){
             console.log(cmd);
 
             exec(cmd, function(err, stout,sterr){
-                console.log(err);
                 if(err){
                     return reject();
                 }
