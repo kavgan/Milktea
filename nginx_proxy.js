@@ -20,7 +20,7 @@ var nginx_proxy = function nginx_proxy(){
             read_template().then( function(handlebar){
                 console.log('then test');
                 var template = handlebars.compile(handlebar);
-                var string = template( {domain:domain,port:port} )
+                var string = template( {domain:domain,name:domain.split('.')[0],port:port} )
                 console.log(string);
 
                 //write string to proxy/default
